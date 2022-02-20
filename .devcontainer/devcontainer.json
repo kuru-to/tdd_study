@@ -1,0 +1,31 @@
+{
+    //コンテナの表示名. 名前を変えて使用
+    "name": "github_templates",
+    //プロジェクトのルート（devcontainer.jsonの2階層上）
+    "context": "..",
+    //Dockerfileの名称
+    "dockerFile": "Dockerfile",
+    // 参照先. 名前を変えて使用
+    "workspaceFolder": "/github_templates",
+    //マウント先. 名前を変えて使用
+    "workspaceMount": "type=bind,source=${localWorkspaceFolder},target=/github_templates",
+    // ホストマシンからアクセスできるコンテナのポート番号
+    // localhost:`appPort` を叩くとコンテナにつながる
+    "appPort": [8001],
+    // イメージをビルドした後にコンテナ内で実行されるコマンド
+    // --system をつけることで docker 内の python の pip で install してくれる
+    "postCreateCommand": "pipenv install -d --system",
+    // コンテナ側のVS Codeにおける各種設定を行う項目
+    // シェルやPythonのパスなど
+    "settings": { 
+        "python.pythonPath": "/usr/local/bin/python",
+        "python.autoComplete.extraPaths": [
+            "/usr/local/lib/python3.9/site-packages",
+        ],
+    },
+    // VS Code の拡張機能
+    "extensions": [
+        "ms-python.python", 
+        "visualstudioexptteam.vscodeintellicode"
+    ],
+}

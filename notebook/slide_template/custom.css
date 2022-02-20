@@ -1,0 +1,10 @@
+.rise-enabled .reveal
+{
+    background-color: #EEE !important;
+    border-bottom: solid 20px #CEC0DA !important;
+}
+
+.rise-enabled .reveal .slides
+{
+    font-size: 20px;
+}

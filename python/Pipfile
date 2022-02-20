@@ -1,0 +1,33 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[packages]
+numpy = "*"
+pandas = "*"
+
+[dev-packages]
+sphinx = "*"
+sphinx-rtd-theme = "*"
+jupyter = "*"
+rise = "*"
+plotly = "*"
+jupyterlab = "*"
+flake8 = "*"
+autopep8 = "*"
+rope = "*"
+mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+pylint = "*"
+
+[scripts]
+test     = "pytest"
+test_coverage = "pytest -v --cov=my_utils"
+make_rst = "sphinx-apidoc -f -o ./docs ."
+make_docs = "sphinx-build -b singlehtml ./docs ./docs/_build"
+check_profile = "python -m src.profiler"
+class_fig = "pyreverse -o png src/"
+jupyternotebook = "jupyter notebook --allow-root"
+jupyterlab = "jupyter lab --allow-root"
