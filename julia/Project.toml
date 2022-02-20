@@ -1,0 +1,12 @@
+name = "Money"
+uuid = "ecdcd9ba-4118-4e59-afc2-b8c3dee8f59c"
+authors = ["kuru-to <ideruf96@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
