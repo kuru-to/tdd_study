@@ -11,4 +11,8 @@ module MoneyModule
     function dollar(amount::Integer)
         return Money(amount, "USD")
     end
+
+    function franc(amount::Integer)
+        return Money(amount, "CHF")
+    end
 end
