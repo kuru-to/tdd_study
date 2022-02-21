@@ -4,8 +4,8 @@ module TestMoney
 
     function main()
         @testset "times" begin
-            @test Money.times(Money.money(2), 2) == Money.money(4)
-            @test 1+1 == 2
+            @test MoneyModule.times(MoneyModule.dollar(2), 2) == MoneyModule.dollar(2 * 2)
+            @test MoneyModule.times(MoneyModule.dollar(1), 3) == MoneyModule.dollar(1 * 3)
         end
     end
 end
