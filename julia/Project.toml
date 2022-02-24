@@ -1,4 +1,4 @@
-name = "Money"
+name = "JuliaMoney"
 uuid = "ecdcd9ba-4118-4e59-afc2-b8c3dee8f59c"
 authors = ["kuru-to <ideruf96@gmail.com>"]
 version = "0.1.0"
