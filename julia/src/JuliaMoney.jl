@@ -199,21 +199,26 @@ end
 
 """
 入金
+
+処理時点での為替レートをベースに金額を確定し, のちにレートが変動したとしても残高の変動が起こらないようにする
 """
-function deposite!(anAccount::Account, payment::Expression)
-    anAccount.transactions = plus(anAccount.transactions, payment)
+function deposite!(anAccount::Account, payment::Expression, aBank::Bank)
+    fixed_payment = reduce(payment, anAccount.base_currency, aBank)
+    anAccount.transactions = plus(anAccount.transactions, fixed_payment)
 end
 
 """
 出金
 
-出金金額が口座の残高よりも高い場合, 出金処理を中止してエラーを出力
+出金金額が口座の残高よりも高い場合, 出金処理を中止してエラーを出力.
+処理時点での為替レートをベースに金額を確定し, のちにレートが変動したとしても残高の変動が起こらないようにする
 """
 function withdraw!(anAccount::Account, payment::Expression, aBank::Bank)
     if balance(anAccount, aBank).amount < reduce(payment, anAccount.base_currency, aBank).amount
         throw(DomainError(payment, "口座残高以上の金額は出金できません。"))
     end
-    anAccount.transactions = minus(anAccount.transactions, payment)
+    fixed_payment = reduce(payment, anAccount.base_currency, aBank)
+    anAccount.transactions = minus(anAccount.transactions, fixed_payment)
 end
 
 """
@@ -224,7 +229,7 @@ TODO:
 """
 function transfer!(from_account::Account, to_account::Account, payment::Expression, aBank::Bank)
     withdraw!(from_account, payment, aBank)
-    deposite!(to_account, payment)
+    deposite!(to_account, payment, aBank)
 end
 
 end

@@ -89,11 +89,11 @@ end
 end
 
 @testset "account" begin
-    usd_account = JuliaMoney.Account(usd)
-    JuliaMoney.deposite!(usd_account, JuliaMoney.franc(4))
     aBank = JuliaMoney.Bank()
     rate = 2.0
     JuliaMoney.add_rate!(aBank, usd, chf, rate)
+    usd_account = JuliaMoney.Account(usd)
+    JuliaMoney.deposite!(usd_account, JuliaMoney.franc(4), aBank)
     @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(4 / rate)
 
     # 他の銀行口座に送金できること
@@ -107,4 +107,25 @@ end
     # 送金金額が自分の預金口座額より大きい場合, 送金不可能になること
     over_transfer_payment = JuliaMoney.dollar(100)
     @test_throws DomainError JuliaMoney.transfer!(usd_account, chf_account, over_transfer_payment, aBank)
+end
+
+@testset "rate change" begin
+    # レートがUSD:CHF=1:2 の時に $1 の残高から 2CHF を引いたあと,
+    # レートが USD:CHF=1:1 になったとしても残高は$0となること
+    aBank = JuliaMoney.Bank()
+    rate_before = 2.0
+    JuliaMoney.add_rate!(aBank, usd, chf, rate_before)
+    usd_account = JuliaMoney.Account(usd)
+    JuliaMoney.deposite!(usd_account, JuliaMoney.dollar(1), aBank)
+    JuliaMoney.withdraw!(usd_account, JuliaMoney.franc(1 * rate_before), aBank)
+
+    rate_after = 1.0
+    JuliaMoney.add_rate!(aBank, usd, chf, rate_after)
+    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(1 - 1 * rate_before / rate_before)
+
+    # 入金の場合も同様, レートが変動した結果不当に増えるようなことにならないようにする
+    JuliaMoney.deposite!(usd_account, JuliaMoney.franc(2), aBank)
+    JuliaMoney.add_rate!(aBank, usd, chf, rate_before)
+    sol_amount = 1 - 1 * rate_before / rate_before + 2 * rate_after
+    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(sol_amount)
 end
