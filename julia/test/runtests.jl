@@ -1,6 +1,16 @@
 using JuliaMoney
 using Test
 
+usd = JuliaMoney.currency_dollar()
+chf = JuliaMoney.currency_franc()
+yen = JuliaMoney.currency_yen()
+
+# 通貨に関する設定のテスト
+@testset "currrency" begin
+    @test JuliaMoney.currency_dollar() == JuliaMoney.Currency("USD")
+    @test_throws DomainError JuliaMoney.Currency("usd")
+end
+
 @testset "dollar times" begin
     @test JuliaMoney.times(JuliaMoney.dollar(5), 2) == JuliaMoney.dollar(5 * 2)
     @test JuliaMoney.times(JuliaMoney.dollar(1), 3) == JuliaMoney.dollar(1 * 3)
@@ -14,51 +24,66 @@ end
 @testset "Bank reduce" begin
     aBank = JuliaMoney.Bank()
     rate = 2.0
-    JuliaMoney.add_rate!(aBank, "USD", "CHF", rate)
+    JuliaMoney.add_rate!(aBank, usd, chf, rate)
     test_dollar = JuliaMoney.dollar(2)
-    @test JuliaMoney.reduce(aBank, test_dollar, "CHF") == JuliaMoney.franc(2 * rate)
-    @test JuliaMoney.reduce(aBank, test_dollar, test_dollar.currency) == test_dollar
+    @test JuliaMoney.reduce(test_dollar, chf, aBank) == JuliaMoney.franc(2 * rate)
+    @test JuliaMoney.reduce(test_dollar, test_dollar.currency, aBank) == test_dollar
 end
 
-@testset "same currency add" begin
-    aBank = JuliaMoney.Bank()
+@testset "same currency plus" begin
     five_dollar = JuliaMoney.dollar(5)
-    @test JuliaMoney.reduce(aBank, JuliaMoney.add(five_dollar, five_dollar), "USD") == JuliaMoney.dollar(5 + 5)
+    @test JuliaMoney.reduce(JuliaMoney.plus(five_dollar, five_dollar), usd) == JuliaMoney.dollar(5 + 5)
     three_franc = JuliaMoney.franc(3)
     two_franc = JuliaMoney.franc(2)
-    @test JuliaMoney.reduce(aBank, JuliaMoney.add(three_franc, two_franc), "CHF") == JuliaMoney.franc(3 + 2)
+    @test JuliaMoney.reduce(JuliaMoney.plus(three_franc, two_franc), chf) == JuliaMoney.franc(3 + 2)
 end
 
-@testset "different currency add" begin
+@testset "different currency plus" begin
     aBank = JuliaMoney.Bank()
     rate = 2.0
-    JuliaMoney.add_rate!(aBank, "USD", "CHF", rate)
-    test_money = JuliaMoney.add(JuliaMoney.dollar(5), JuliaMoney.franc(10))
-    @test JuliaMoney.reduce(aBank, test_money, "USD") == JuliaMoney.dollar(5 + 10 / rate)
+    JuliaMoney.add_rate!(aBank, usd, chf, rate)
+    test_money = JuliaMoney.plus(JuliaMoney.dollar(5), JuliaMoney.franc(10))
+    @test JuliaMoney.reduce(test_money, usd, aBank) == JuliaMoney.dollar(5 + 10 / rate)
 end
 
 @testset "Sum times" begin
-    aBank = JuliaMoney.Bank()
     five_dollar = JuliaMoney.dollar(5)
-    test_sum = JuliaMoney.add(five_dollar, five_dollar)
-    test_dollar = JuliaMoney.reduce(aBank, JuliaMoney.times(test_sum, 2), "USD")
+    test_sum = JuliaMoney.plus(five_dollar, five_dollar)
+    test_dollar = JuliaMoney.reduce(JuliaMoney.times(test_sum, 2), usd)
     @test test_dollar == JuliaMoney.dollar((5 + 5) * 2)
 end
 
 @testset "minus" begin
-    aBank = JuliaMoney.Bank()
     one_dollar = JuliaMoney.dollar(1)
     two_dollar = JuliaMoney.dollar(2)
-    test_dollar = JuliaMoney.reduce(aBank, JuliaMoney.minus(two_dollar, one_dollar), "USD")
+    test_dollar = JuliaMoney.reduce(JuliaMoney.minus(two_dollar, one_dollar), usd)
     @test test_dollar == JuliaMoney.dollar(2 - 1)
 
+    aBank = JuliaMoney.Bank()
     rate = 2.0
-    JuliaMoney.add_rate!(aBank, "USD", "CHF", rate)
+    JuliaMoney.add_rate!(aBank, usd, chf, rate)
     two_franc = JuliaMoney.franc(2)
-    test_dollar = JuliaMoney.reduce(aBank, JuliaMoney.minus(two_franc, two_dollar), "USD")
+    test_dollar = JuliaMoney.reduce(JuliaMoney.minus(two_franc, two_dollar), usd, aBank)
     @test test_dollar == JuliaMoney.dollar(2 / rate - 2)
 
-    two_franc_plus_one_dollar = JuliaMoney.add(two_franc, one_dollar)
-    test_dollar = JuliaMoney.reduce(aBank, JuliaMoney.minus(two_dollar, two_franc_plus_one_dollar), "USD")
+    two_franc_plus_one_dollar = JuliaMoney.plus(two_franc, one_dollar)
+    test_dollar = JuliaMoney.reduce(JuliaMoney.minus(two_dollar, two_franc_plus_one_dollar), usd, aBank)
     @test test_dollar == JuliaMoney.dollar(2 - (2 / rate + 1))
+end
+
+@testset "yen" begin
+    hundred_yen = JuliaMoney.yen(100)
+    @test JuliaMoney.times(hundred_yen, 3) == JuliaMoney.yen(100 * 3)
+    @test JuliaMoney.reduce(JuliaMoney.plus(hundred_yen, hundred_yen), yen) == JuliaMoney.yen(100 + 100)
+
+    aBank = JuliaMoney.Bank()
+    yen_rate = 100
+    JuliaMoney.add_rate!(aBank, usd, yen, yen_rate)
+    @test JuliaMoney.reduce(hundred_yen, usd, aBank) == JuliaMoney.dollar(100 / yen_rate)
+
+    franc_rate = 2
+    JuliaMoney.add_rate!(aBank, usd, chf, franc_rate)
+    sum = JuliaMoney.plus(hundred_yen, JuliaMoney.franc(2))
+    test_dollar = JuliaMoney.reduce(sum, usd, aBank)
+    @test test_dollar == JuliaMoney.dollar(100 / yen_rate + 2 / franc_rate)
 end
