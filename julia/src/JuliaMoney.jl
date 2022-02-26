@@ -40,9 +40,9 @@ abstract type Expression end
 """
 お金
 
-Attributes:
-    amount: 金額
-    currency: 通貨
+# Arguments
+    - `amount` : 金額
+    - `currency` : 通貨
 """
 struct Money{T<:Real} <: Expression
     amount::T
