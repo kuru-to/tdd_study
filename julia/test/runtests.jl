@@ -3,7 +3,7 @@ using Test
 
 usd = JuliaMoney.currency_dollar()
 chf = JuliaMoney.currency_franc()
-yen = JuliaMoney.currency_yen()
+jpy = JuliaMoney.currency_yen()
 
 # 通貨に関する設定のテスト
 @testset "currrency" begin
@@ -74,11 +74,11 @@ end
 @testset "yen" begin
     hundred_yen = JuliaMoney.yen(100)
     @test JuliaMoney.times(hundred_yen, 3) == JuliaMoney.yen(100 * 3)
-    @test JuliaMoney.reduce(JuliaMoney.plus(hundred_yen, hundred_yen), yen) == JuliaMoney.yen(100 + 100)
+    @test JuliaMoney.reduce(JuliaMoney.plus(hundred_yen, hundred_yen), jpy) == JuliaMoney.yen(100 + 100)
 
     aBank = JuliaMoney.Bank()
     yen_rate = 100
-    JuliaMoney.add_rate!(aBank, usd, yen, yen_rate)
+    JuliaMoney.add_rate!(aBank, usd, jpy, yen_rate)
     @test JuliaMoney.reduce(hundred_yen, usd, aBank) == JuliaMoney.dollar(100 / yen_rate)
 
     franc_rate = 2
@@ -86,4 +86,25 @@ end
     sum = JuliaMoney.plus(hundred_yen, JuliaMoney.franc(2))
     test_dollar = JuliaMoney.reduce(sum, usd, aBank)
     @test test_dollar == JuliaMoney.dollar(100 / yen_rate + 2 / franc_rate)
+end
+
+@testset "account" begin
+    usd_account = JuliaMoney.Account(usd)
+    JuliaMoney.deposite!(usd_account, JuliaMoney.franc(4))
+    aBank = JuliaMoney.Bank()
+    rate = 2.0
+    JuliaMoney.add_rate!(aBank, usd, chf, rate)
+    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(4 / rate)
+
+    # 他の銀行口座に送金できること
+    # 送金後に口座の残高が減っていること
+    transfer_payment = JuliaMoney.dollar(1)
+    chf_account = JuliaMoney.Account(chf)
+    JuliaMoney.transfer!(usd_account, chf_account, transfer_payment, aBank)
+    @test JuliaMoney.balance(chf_account, aBank) == JuliaMoney.franc(1 * rate)
+    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(4 / rate - 1)
+
+    # 送金金額が自分の預金口座額より大きい場合, 送金不可能になること
+    over_transfer_payment = JuliaMoney.dollar(100)
+    @test_throws DomainError JuliaMoney.transfer!(usd_account, chf_account, over_transfer_payment, aBank)
 end

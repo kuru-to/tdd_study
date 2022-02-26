@@ -178,4 +178,53 @@ function reduce(aSum::Sum, to_currency::Currency, aBank::Bank=Bank())::Money
     return Money(sum_amount, to_currency)
 end
 
+"""
+銀行の口座を表す構造体.
+ベースとなる通貨は初期化時に確定する.
+口座の残高は変動するので mutable
+"""
+mutable struct Account
+    base_currency::Currency
+    transactions::Expression
+    Account(base_currency) = new(base_currency, Money(0, base_currency))
+end
+
+"""
+預金残高の出力
+ベースとなる通貨で出力を行う
+"""
+function balance(anAccount::Account, aBank::Bank)::Money
+    return reduce(anAccount.transactions, anAccount.base_currency, aBank)
+end
+
+"""
+入金
+"""
+function deposite!(anAccount::Account, payment::Expression)
+    anAccount.transactions = plus(anAccount.transactions, payment)
+end
+
+"""
+出金
+
+出金金額が口座の残高よりも高い場合, 出金処理を中止してエラーを出力
+"""
+function withdraw!(anAccount::Account, payment::Expression, aBank::Bank)
+    if balance(anAccount, aBank).amount < reduce(payment, anAccount.base_currency, aBank).amount
+        throw(DomainError(payment, "口座残高以上の金額は出金できません。"))
+    end
+    anAccount.transactions = minus(anAccount.transactions, payment)
+end
+
+"""
+送金処理
+
+TODO:
+    * 残高が引かれた後にエラーが起きると残高が不正に引かれてしまうため, rollback を導入する
+"""
+function transfer!(from_account::Account, to_account::Account, payment::Expression, aBank::Bank)
+    withdraw!(from_account, payment, aBank)
+    deposite!(to_account, payment)
+end
+
 end
