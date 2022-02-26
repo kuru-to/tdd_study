@@ -8,7 +8,7 @@ const currencies = Set(["USD", "CHF", "JPY"])
 """
 通貨
 
-変な文字列が通貨に入ってしまうバグの原因になるため, 指定された通貨しか使用できないようにstruct化
+変な文字列が通貨に入ってしまうとバグの原因になるため, 指定された通貨しか使用できないようにstruct化
 """
 struct Currency
     name_currency::String
@@ -75,12 +75,15 @@ struct Sum <: Expression
 end
 
 """
-`Money`の掛け算
+`Money` の掛け算
 """
 function times(aMoney::Money, multiplier::Real)::Money
     return Money(aMoney.amount * multiplier, aMoney.currency)
 end
 
+"""
+`Sum` の掛け算
+"""
 function times(aSum::Sum, multiplier::Real)::Sum
     return Sum(times(aSum.augend, multiplier), times(aSum.addend, multiplier))
 end
@@ -182,6 +185,10 @@ end
 銀行の口座を表す構造体.
 ベースとなる通貨は初期化時に確定する.
 口座の残高は変動するので mutable
+
+Args:
+    base_currency: 使用する通貨
+    transactions: 残高を計算する際のトランザクション一覧. すべて同じ通貨で計算される
 """
 mutable struct Account
     base_currency::Currency
@@ -191,10 +198,11 @@ end
 
 """
 預金残高の出力
-ベースとなる通貨で出力を行う
+ベースとなる通貨で出力を行う.
+トランザクションはすべて同じ通貨のため, 銀行は不要
 """
-function balance(anAccount::Account, aBank::Bank)::Money
-    return reduce(anAccount.transactions, anAccount.base_currency, aBank)
+function balance(anAccount::Account)::Money
+    return reduce(anAccount.transactions, anAccount.base_currency)
 end
 
 """
@@ -210,14 +218,14 @@ end
 """
 出金
 
+処理時点での為替レートをベースに金額を確定し, のちにレートが変動したとしても残高の変動が起こらないようにする.
 出金金額が口座の残高よりも高い場合, 出金処理を中止してエラーを出力.
-処理時点での為替レートをベースに金額を確定し, のちにレートが変動したとしても残高の変動が起こらないようにする
 """
 function withdraw!(anAccount::Account, payment::Expression, aBank::Bank)
-    if balance(anAccount, aBank).amount < reduce(payment, anAccount.base_currency, aBank).amount
+    fixed_payment = reduce(payment, anAccount.base_currency, aBank)
+    if balance(anAccount).amount < fixed_payment.amount
         throw(DomainError(payment, "口座残高以上の金額は出金できません。"))
     end
-    fixed_payment = reduce(payment, anAccount.base_currency, aBank)
     anAccount.transactions = minus(anAccount.transactions, fixed_payment)
 end
 

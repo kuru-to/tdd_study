@@ -94,18 +94,18 @@ end
     JuliaMoney.add_rate!(aBank, usd, chf, rate)
     usd_account = JuliaMoney.Account(usd)
     JuliaMoney.deposite!(usd_account, JuliaMoney.franc(4), aBank)
-    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(4 / rate)
+    @test JuliaMoney.balance(usd_account) == JuliaMoney.dollar(4 / rate)
 
     # 他の銀行口座に送金できること
     # 送金後に口座の残高が減っていること
     transfer_payment = JuliaMoney.dollar(1)
     chf_account = JuliaMoney.Account(chf)
     JuliaMoney.transfer!(usd_account, chf_account, transfer_payment, aBank)
-    @test JuliaMoney.balance(chf_account, aBank) == JuliaMoney.franc(1 * rate)
-    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(4 / rate - 1)
+    @test JuliaMoney.balance(chf_account) == JuliaMoney.franc(1 * rate)
+    @test JuliaMoney.balance(usd_account) == JuliaMoney.dollar(4 / rate - 1)
 
     # 送金金額が自分の預金口座額より大きい場合, 送金不可能になること
-    over_transfer_payment = JuliaMoney.dollar(100)
+    over_transfer_payment = JuliaMoney.dollar(10000)
     @test_throws DomainError JuliaMoney.transfer!(usd_account, chf_account, over_transfer_payment, aBank)
 end
 
@@ -121,11 +121,11 @@ end
 
     rate_after = 1.0
     JuliaMoney.add_rate!(aBank, usd, chf, rate_after)
-    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(1 - 1 * rate_before / rate_before)
+    @test JuliaMoney.balance(usd_account) == JuliaMoney.dollar(1 - 1 * rate_before / rate_before)
 
     # 入金の場合も同様, レートが変動した結果不当に増えるようなことにならないようにする
     JuliaMoney.deposite!(usd_account, JuliaMoney.franc(2), aBank)
     JuliaMoney.add_rate!(aBank, usd, chf, rate_before)
     sol_amount = 1 - 1 * rate_before / rate_before + 2 * rate_after
-    @test JuliaMoney.balance(usd_account, aBank) == JuliaMoney.dollar(sol_amount)
+    @test JuliaMoney.balance(usd_account) == JuliaMoney.dollar(sol_amount)
 end
